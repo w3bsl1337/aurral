@@ -1,0 +1,42 @@
+# Test image only, never part of a pull request: v3.0.1 plus the bonus-track fix.
+name: Test image
+
+on:
+  push:
+    branches: ["test/v3.0.1-bonus-tracks"]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository }}:bonus-tracks-test
+          platforms: linux/amd64
+          build-args: |
+            APP_VERSION=3.0.1+bonus-tracks
+            GITHUB_REPO=lklynet/aurral
+            RELEASE_CHANNEL=stable
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
